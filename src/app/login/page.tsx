@@ -7,7 +7,7 @@ import { Droplets } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 
 function LoginForm() {
-  const { configured, signIn, signInWithGoogle } = useAuth()
+  const { configured, signIn } = useAuth()
   const router = useRouter()
   const params = useSearchParams()
   const [email, setEmail] = useState('')
@@ -26,16 +26,6 @@ function LoginForm() {
       return
     }
     router.push('/profile')
-  }
-
-  async function onGoogle() {
-    setBusy(true)
-    setError('')
-    const result = await signInWithGoogle()
-    if (result.error) {
-      setBusy(false)
-      setError(result.error)
-    }
   }
 
   return (
@@ -75,14 +65,6 @@ function LoginForm() {
           className="w-full bg-gradient-to-r from-teal-500 to-blue-600 text-white py-3 rounded-xl font-bold disabled:opacity-60"
         >
           {busy ? 'Signing in…' : 'Sign in'}
-        </button>
-        <button
-          type="button"
-          onClick={onGoogle}
-          disabled={busy || !configured}
-          className="w-full border border-gray-200 bg-white text-gray-800 py-3 rounded-xl font-semibold disabled:opacity-60"
-        >
-          Continue with Google
         </button>
       </form>
     </>

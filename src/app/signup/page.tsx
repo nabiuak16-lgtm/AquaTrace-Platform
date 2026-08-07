@@ -7,7 +7,7 @@ import { Droplets } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 
 export default function SignupPage() {
-  const { configured, signUp, signInWithGoogle } = useAuth()
+  const { configured, signUp } = useAuth()
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -29,16 +29,6 @@ export default function SignupPage() {
     }
     setInfo('Account created. If email confirmation is enabled, check your inbox; otherwise you are signed in.')
     router.push('/profile')
-  }
-
-  async function onGoogle() {
-    setBusy(true)
-    setError('')
-    const result = await signInWithGoogle()
-    if (result.error) {
-      setBusy(false)
-      setError(result.error)
-    }
   }
 
   return (
@@ -93,14 +83,6 @@ export default function SignupPage() {
             className="w-full bg-gradient-to-r from-teal-500 to-blue-600 text-white py-3 rounded-xl font-bold disabled:opacity-60"
           >
             {busy ? 'Creating…' : 'Sign up'}
-          </button>
-          <button
-            type="button"
-            onClick={onGoogle}
-            disabled={busy || !configured}
-            className="w-full border border-gray-200 bg-white text-gray-800 py-3 rounded-xl font-semibold disabled:opacity-60"
-          >
-            Continue with Google
           </button>
         </form>
 

@@ -21,7 +21,6 @@ type AuthContextValue = {
   syncMessage: string | null
   signIn: (email: string, password: string) => Promise<{ error?: string }>
   signUp: (email: string, password: string, name?: string) => Promise<{ error?: string }>
-  signInWithGoogle: () => Promise<{ error?: string }>
   signOut: () => Promise<void>
   clearSyncMessage: () => void
 }
@@ -91,17 +90,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error ? { error: error.message } : {}
   }, [configured])
 
-  const signInWithGoogle = useCallback(async () => {
-    if (!configured) return { error: 'Accounts are not configured yet' }
-    const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${origin}/auth/callback` },
-    })
-    return error ? { error: error.message } : {}
-  }, [configured])
-
   const signOut = useCallback(async () => {
     if (!configured) return
     const supabase = createClient()
@@ -118,11 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       syncMessage,
       signIn,
       signUp,
-      signInWithGoogle,
       signOut,
       clearSyncMessage: () => setSyncMessage(null),
     }),
-    [configured, loading, session, syncMessage, signIn, signUp, signInWithGoogle, signOut],
+    [configured, loading, session, syncMessage, signIn, signUp, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
