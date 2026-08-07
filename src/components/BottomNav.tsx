@@ -4,17 +4,19 @@ import { usePathname } from 'next/navigation'
 import { Home, Droplets, FlaskConical, ShoppingBag, User } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/lib/i18n'
+import { useAuth } from '@/lib/auth'
 
 export default function BottomNav() {
   const pathname = usePathname()
   const { t } = useLang()
+  const { user } = useAuth()
 
   const ITEMS = [
     { href: '/', label: t.navHome, icon: Home },
     { href: '/sources', label: t.navSources, icon: Droplets },
     { href: '/test', label: t.navTest, icon: FlaskConical },
     { href: '/shop', label: t.navShop, icon: ShoppingBag },
-    { href: '/profile', label: t.navProfile, icon: User },
+    { href: user ? '/profile' : '/login', label: user ? t.navProfile : 'Sign in', icon: User },
   ]
 
   return (

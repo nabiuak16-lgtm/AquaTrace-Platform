@@ -3,6 +3,7 @@ import './globals.css'
 import Navbar from '@/components/Navbar'
 import BottomNav from '@/components/BottomNav'
 import { LanguageProvider } from '@/lib/i18n'
+import { AuthProvider } from '@/lib/auth'
 
 export const metadata: Metadata = {
   title: 'AquaTrace — Know What’s Really in Your Water',
@@ -15,11 +16,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 antialiased">
         <LanguageProvider>
-          <div className="md:block hidden">
-            <Navbar />
-          </div>
-          <main className="pt-0 md:pt-16 pb-24 md:pb-8 min-h-screen w-full">{children}</main>
-          <BottomNav />
+          <AuthProvider>
+            <div className="md:block hidden">
+              <Navbar />
+            </div>
+            <main className="pt-0 md:pt-16 pb-24 md:pb-8 min-h-screen w-full">{children}</main>
+            <BottomNav />
+          </AuthProvider>
         </LanguageProvider>
       </body>
     </html>

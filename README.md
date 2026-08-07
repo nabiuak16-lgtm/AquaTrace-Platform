@@ -16,6 +16,7 @@ Live demo: [https://aquatrace-ten.vercel.app](https://aquatrace-ten.vercel.app)
 - Before & After filter comparison
 - AI photo quality check
 - **AI analysis (Gemini)** — AI interpretation of each result with personalised recommendations (EN / RU)
+- **User accounts** — Google or email/password via Supabase; tests & sources sync to the cloud
 - Membrane shop & pack activation
 - **AquaTrace Pro ($20/mo)** — multi-location dashboard, team access, PDF reports, alerts, analytics
 - Replacement Prefilters — **$5**
@@ -44,9 +45,22 @@ Without a key the endpoint gracefully falls back to rule-based analysis, so the 
 
 To keep AI usage low, responses are cached: per sample in the browser (`localStorage`) and per payload on the server (in-memory, 1 h TTL).
 
+## User accounts (Supabase)
+
+Guests keep working with local device storage. Signed-in users sync samples, sources, membranes and profile to Supabase (row-level security per user).
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. In the SQL Editor, run [`supabase/schema.sql`](supabase/schema.sql).
+3. Enable **Email** auth; optionally enable **Google** provider and set redirect URLs:
+   - `http://localhost:3000/auth/callback`
+   - `https://<your-vercel-domain>/auth/callback`
+4. Copy Project URL + anon key into `.env.local` as `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (also add them on Vercel).
+
+Pages: `/login`, `/signup`, `/profile` (sign out + sync status).
+
 ## Stack
 
-- Next.js 14 · React · TypeScript · Tailwind CSS
+- Next.js 14 · React · TypeScript · Tailwind CSS · Supabase Auth/Postgres · Gemini
 
 ## Deploy
 

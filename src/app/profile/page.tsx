@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getMembranes, getProfile, getSources, saveProfile } from '@/lib/storage'
 import DisclaimerBox from '@/components/DisclaimerBox'
-import { Info } from 'lucide-react'
+import { Info, LogIn, LogOut } from 'lucide-react'
+import { useAuth } from '@/lib/auth'
 
 export default function ProfilePage() {
+  const { user, configured, loading, signOut, syncMessage, clearSyncMessage } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [saved, setSaved] = useState(false)
@@ -13,10 +15,10 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const p = getProfile()
-    setName(p.name)
-    setEmail(p.email)
+    setName(p.name || user?.user_metadata?.full_name || '')
+    setEmail(p.email || user?.email || '')
     setStats({ sources: getSources().length, membranes: getMembranes().remaining })
-  }, [])
+  }, [user])
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 pt-6 pb-8">
@@ -26,6 +28,49 @@ export default function ProfilePage() {
 
         <div className="mt-4">
           <DisclaimerBox />
+        </div>
+
+        <div className="mt-4 bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+          {loading ? (
+            <p className="text-sm text-gray-500">Checking account…</p>
+          ) : user ? (
+            <>
+              <p className="text-sm text-teal-700 font-medium">
+                Signed in as {user.email}
+              </p>
+              {syncMessage && (
+                <p className="text-sm text-gray-600 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2">
+                  {syncMessage}{' '}
+                  <button type="button" className="underline" onClick={clearSyncMessage}>
+                    Dismiss
+                  </button>
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-800 py-3 rounded-xl font-semibold"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-gray-600">
+                {configured
+                  ? 'Sign in to sync your tests across devices.'
+                  : 'Guest mode — data stays on this device until accounts are configured.'}
+              </p>
+              <Link
+                href="/login"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-blue-600 text-white py-3 rounded-xl font-bold"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign in / Create account
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="mt-4 bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
@@ -55,7 +100,11 @@ export default function ProfilePage() {
           >
             Save profile
           </button>
-          {saved && <p className="text-sm text-teal-700">Saved on this device.</p>}
+          {saved && (
+            <p className="text-sm text-teal-700">
+              {user ? 'Saved and synced to your account.' : 'Saved on this device.'}
+            </p>
+          )}
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
@@ -78,15 +127,11 @@ export default function ProfilePage() {
             </p>
           </div>
           <p>Membrane: single-use, one membrane per test.</p>
-          <p>Cartridge holder: reusable and should be cleaned after testing.</p>
-        </div>
-
-        <div className="mt-4 flex flex-col gap-2">
-          <Link href="/about" className="text-teal-700 font-semibold text-sm">
-            How AquaTrace works →
+          <Link href="/about" className="text-teal-700 font-semibold block">
+            About AquaTrace
           </Link>
-          <Link href="/dashboard" className="text-teal-700 font-semibold text-sm">
-            Classic monitoring dashboard →
+          <Link href="/dashboard" className="text-teal-700 font-semibold block">
+            Open dashboard
           </Link>
         </div>
       </div>

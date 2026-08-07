@@ -8,6 +8,27 @@ const MEMBRANE_KEY = 'aquatrace_membranes_v2'
 const ACTIVE_SOURCE_KEY = 'aquatrace_active_source'
 const COMPARE_KEY = 'aquatrace_compare_session'
 const PROFILE_KEY = 'aquatrace_profile'
+const SIGNED_IN_KEY = 'aquatrace_signed_in'
+const MAX_STORED_SAMPLES = 50
+
+function queueCloudSync(run: (mod: typeof import('@/lib/sync')) => Promise<void>): void {
+  if (typeof window === 'undefined') return
+  if (localStorage.getItem(SIGNED_IN_KEY) !== '1') return
+  void import('@/lib/sync')
+    .then((mod) => run(mod))
+    .catch(() => {})
+}
+
+export function setAccountSignedIn(signedIn: boolean): void {
+  if (typeof window === 'undefined') return
+  if (signedIn) localStorage.setItem(SIGNED_IN_KEY, '1')
+  else localStorage.removeItem(SIGNED_IN_KEY)
+}
+
+export function isAccountSignedIn(): boolean {
+  if (typeof window === 'undefined') return false
+  return localStorage.getItem(SIGNED_IN_KEY) === '1'
+}
 
 const DEFAULT_SOURCES: WaterSource[] = [
   {
@@ -59,6 +80,22 @@ function normalizeSample(s: Sample): Sample {
   return { ...s, analysis: ensureRiskScore(s.analysis) }
 }
 
+export function replaceLocalAccountData(data: {
+  profile: { name: string; email: string }
+  samples: Sample[]
+  sources: WaterSource[]
+  membranes: MembraneInventory
+}): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile))
+  localStorage.setItem(
+    SAMPLES_KEY,
+    JSON.stringify(data.samples.map(normalizeSample).slice(0, MAX_STORED_SAMPLES)),
+  )
+  localStorage.setItem(SOURCES_KEY, JSON.stringify(data.sources))
+  localStorage.setItem(MEMBRANE_KEY, JSON.stringify(data.membranes))
+}
+
 export function getUserSamples(): Sample[] {
   if (typeof window === 'undefined') return []
   try {
@@ -70,12 +107,11 @@ export function getUserSamples(): Sample[] {
   }
 }
 
-const MAX_STORED_SAMPLES = 50
-
 export function saveUserSample(sample: Sample): void {
   if (typeof window === 'undefined') return
   const existing = getUserSamples()
-  const list = [normalizeSample(sample), ...existing].slice(0, MAX_STORED_SAMPLES)
+  const normalized = normalizeSample(sample)
+  const list = [normalized, ...existing].slice(0, MAX_STORED_SAMPLES)
   try {
     localStorage.setItem(SAMPLES_KEY, JSON.stringify(list))
   } catch {
@@ -89,6 +125,10 @@ export function saveUserSample(sample: Sample): void {
     }
   }
   consumeMembrane()
+  queueCloudSync(async (mod) => {
+    await mod.syncSample(normalized)
+    await mod.syncMembranes(getMembranes())
+  })
 }
 
 export function updateSample(id: string, updates: Partial<Sample>): void {
@@ -96,12 +136,19 @@ export function updateSample(id: string, updates: Partial<Sample>): void {
   const existing = getUserSamples()
   const updated = existing.map((s) => (s.id === id ? normalizeSample({ ...s, ...updates }) : s))
   localStorage.setItem(SAMPLES_KEY, JSON.stringify(updated))
+  const next = updated.find((s) => s.id === id)
+  if (next) {
+    queueCloudSync(async (mod) => {
+      await mod.syncSample(next)
+    })
+  }
 }
 
 export function getAllSamples(): Sample[] {
   const user = getUserSamples()
+  // Demo history only for guests — signed-in accounts see their own data only.
+  if (isAccountSignedIn()) return user
   const mocks = MOCK_SAMPLES.map((s) => normalizeSample(s as Sample))
-  // Prefer user samples; include mocks for demo history
   return [...user, ...mocks]
 }
 
@@ -157,6 +204,9 @@ export function saveSource(source: WaterSource): void {
   if (idx >= 0) list[idx] = source
   else list.push(source)
   localStorage.setItem(SOURCES_KEY, JSON.stringify(list))
+  queueCloudSync(async (mod) => {
+    await mod.syncSource(source)
+  })
 }
 
 export function getActiveSourceId(): string {
@@ -187,6 +237,9 @@ export function getMembranes(): MembraneInventory {
 export function setMembranes(inv: MembraneInventory): void {
   if (typeof window === 'undefined') return
   localStorage.setItem(MEMBRANE_KEY, JSON.stringify(inv))
+  queueCloudSync(async (mod) => {
+    await mod.syncMembranes(inv)
+  })
 }
 
 export function consumeMembrane(): boolean {
@@ -258,6 +311,9 @@ export function getProfile(): { name: string; email: string } {
 export function saveProfile(p: { name: string; email: string }): void {
   if (typeof window === 'undefined') return
   localStorage.setItem(PROFILE_KEY, JSON.stringify(p))
+  queueCloudSync(async (mod) => {
+    await mod.syncProfile(p)
+  })
 }
 
 export function significantRise(current: number, previous: number | null, baselineAvg?: number): boolean {

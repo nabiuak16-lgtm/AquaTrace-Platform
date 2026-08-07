@@ -6,11 +6,13 @@ import { useState } from 'react'
 import clsx from 'clsx'
 import LanguageSwitch from '@/components/LanguageSwitch'
 import { useLang } from '@/lib/i18n'
+import { useAuth } from '@/lib/auth'
 
 export default function Navbar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const { t } = useLang()
+  const { user } = useAuth()
 
   const NAV_LINKS = [
     { href: '/', label: t.navHome },
@@ -49,6 +51,17 @@ export default function Navbar() {
               </Link>
             ))}
             <LanguageSwitch className="ml-2" />
+            <Link
+              href={user ? '/profile' : '/login'}
+              className={clsx(
+                'ml-2 px-3 py-2 rounded-lg text-sm font-medium',
+                pathname === '/login' || pathname === '/signup'
+                  ? 'bg-teal-50 text-teal-700'
+                  : 'text-gray-600 hover:text-teal-700 hover:bg-teal-50',
+              )}
+            >
+              {user ? 'Account' : 'Sign in'}
+            </Link>
             <Link
               href="/test"
               className="ml-2 px-4 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-blue-600 text-white text-sm font-semibold hover:opacity-90 transition-all shadow-sm"
