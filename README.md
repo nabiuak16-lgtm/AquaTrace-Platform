@@ -12,6 +12,7 @@ Live demo: [https://aquatrace-ten.vercel.app](https://aquatrace-ten.vercel.app)
 
 - Beautiful landing (EN / RU): explain → how it works → Start Water Test
 - AquaScore risk screening (Low / Medium / High)
+- Pollution map with screened locations and risk levels
 - Water source passports & test history
 - Before & After filter comparison
 - AI photo quality check

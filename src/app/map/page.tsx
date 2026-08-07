@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { getAllSamples } from '@/lib/storage'
+import { getMapSamples } from '@/lib/storage'
 import type { Sample } from '@/types'
 import RiskBadge from '@/components/RiskBadge'
-import { MapPin, Droplets, FlaskConical, Calendar, Filter } from 'lucide-react'
+import { MapPin, Droplets, FlaskConical, Calendar, Filter, Gauge } from 'lucide-react'
 import type { RiskLevel } from '@/types'
 
 const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false })
@@ -15,7 +15,7 @@ export default function MapPage() {
   const [filter, setFilter] = useState<RiskLevel | 'All'>('All')
 
   useEffect(() => {
-    setSamples(getAllSamples())
+    setSamples(getMapSamples())
   }, [])
 
   const filtered = filter === 'All' ? samples : samples.filter((s) => s.analysis.riskLevel === filter)
@@ -27,7 +27,7 @@ export default function MapPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-teal-50/60 to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -35,22 +35,26 @@ export default function MapPage() {
               <MapPin className="w-4 h-4" />
               POLLUTION MAP
             </div>
-            <h1 className="text-3xl font-black text-gray-900">Crowdsourced Contamination Map</h1>
-            <p className="text-gray-500 mt-1">Real-time microplastic risk levels from community samples.</p>
+            <h1 className="text-3xl font-black text-gray-900">Contamination map</h1>
+            <p className="text-gray-500 mt-1 max-w-xl">
+              See screened locations around Astana and their AquaScore risk level. Example community
+              points are shown so you can explore the map right away; your own tests appear when you
+              run them.
+            </p>
           </div>
-          {/* Legend */}
           <div className="flex items-center gap-3 text-sm">
-            {([['Low', '#22c55e'], ['Medium', '#f59e0b'], ['High', '#ef4444']] as const).map(([risk, color]) => (
-              <div key={risk} className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                <span className="text-gray-600">{risk}</span>
-              </div>
-            ))}
+            {([['Low', '#14b8a8'], ['Medium', '#f59e0b'], ['High', '#ef4444']] as const).map(
+              ([risk, color]) => (
+                <div key={risk} className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                  <span className="text-gray-600">{risk}</span>
+                </div>
+              ),
+            )}
           </div>
         </div>
 
-        {/* Filter */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
           <Filter className="w-4 h-4 text-gray-400" />
           {(['All', 'Low', 'Medium', 'High'] as const).map((f) => (
             <button
@@ -68,46 +72,65 @@ export default function MapPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Map */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" style={{ height: '520px' }}>
-              {filtered.length > 0 && (
-                <LeafletMap samples={filtered} onSelect={setSelected} />
+            <div
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative"
+              style={{ height: '520px' }}
+            >
+              <LeafletMap
+                samples={filtered}
+                onSelect={setSelected}
+                selectedId={selected?.id}
+              />
+              {filtered.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/70 pointer-events-none">
+                  <p className="text-sm text-gray-600 font-medium">No points for this filter</p>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-4">
-            {/* Stats */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-sm font-semibold text-gray-700 mb-3">Overview</p>
               <div className="grid grid-cols-3 gap-2">
-                {([
-                  { label: 'Low', count: counts.Low, color: 'text-green-600 bg-green-50' },
-                  { label: 'Medium', count: counts.Medium, color: 'text-yellow-600 bg-yellow-50' },
-                  { label: 'High', count: counts.High, color: 'text-red-600 bg-red-50' },
-                ] as const).map(({ label, count, color }) => (
+                {(
+                  [
+                    { label: 'Low', count: counts.Low, color: 'text-teal-700 bg-teal-50' },
+                    { label: 'Medium', count: counts.Medium, color: 'text-amber-700 bg-amber-50' },
+                    { label: 'High', count: counts.High, color: 'text-red-700 bg-red-50' },
+                  ] as const
+                ).map(({ label, count, color }) => (
                   <div key={label} className={`rounded-xl p-2 text-center ${color}`}>
                     <p className="text-lg font-black">{count}</p>
                     <p className="text-xs font-medium">{label}</p>
                   </div>
                 ))}
               </div>
+              <p className="mt-3 text-xs text-gray-500">{samples.length} locations on the map</p>
             </div>
 
-            {/* Selected */}
             {selected && (
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 animate-fade-in">
-                <div className="flex items-center justify-between mb-3">
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-3 gap-2">
                   <p className="font-bold text-gray-900 text-sm">{selected.locationName}</p>
                   <RiskBadge risk={selected.analysis.riskLevel} size="sm" />
                 </div>
                 <div className="space-y-2">
                   {[
-                    { icon: Droplets, label: `${selected.analysis.suspectedParticles} particles` },
+                    {
+                      icon: Gauge,
+                      label: `AquaScore ${selected.analysis.riskScore}`,
+                    },
+                    {
+                      icon: Droplets,
+                      label: `${selected.analysis.suspectedParticles} particles`,
+                    },
                     { icon: FlaskConical, label: selected.possibleSource },
-                    { icon: MapPin, label: `${selected.latitude.toFixed(3)}, ${selected.longitude.toFixed(3)}` },
+                    {
+                      icon: MapPin,
+                      label: `${selected.latitude.toFixed(3)}, ${selected.longitude.toFixed(3)}`,
+                    },
                     { icon: Calendar, label: selected.date },
                   ].map(({ icon: Icon, label }) => (
                     <div key={label} className="flex items-center gap-2 text-xs text-gray-600">
@@ -117,15 +140,16 @@ export default function MapPage() {
                   ))}
                 </div>
                 {selected.notes && (
-                  <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">{selected.notes}</p>
+                  <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                    {selected.notes}
+                  </p>
                 )}
               </div>
             )}
 
-            {/* Sample list */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-sm font-semibold text-gray-700 mb-3">
-                All Samples ({filtered.length})
+                Locations ({filtered.length})
               </p>
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {filtered.map((s) => (
@@ -138,7 +162,9 @@ export default function MapPage() {
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{s.locationName}</p>
-                      <p className="text-xs text-gray-400">{s.analysis.suspectedParticles} particles · {s.date}</p>
+                      <p className="text-xs text-gray-400">
+                        AquaScore {s.analysis.riskScore} · {s.date}
+                      </p>
                     </div>
                     <RiskBadge risk={s.analysis.riskLevel} size="sm" />
                   </button>

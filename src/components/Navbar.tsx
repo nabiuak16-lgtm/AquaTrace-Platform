@@ -20,6 +20,7 @@ export default function Navbar() {
     { href: '/pro', label: t.navPro },
     { href: '/sources', label: t.navSources },
     { href: '/test', label: t.navTest },
+    { href: '/map', label: t.navMap },
     { href: '/shop', label: t.navShop },
     { href: '/profile', label: t.navProfile },
   ]

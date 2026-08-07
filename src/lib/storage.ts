@@ -1,5 +1,5 @@
 import type { CompareSession, MembraneInventory, Sample, WaterSource } from '@/types'
-import { MOCK_SAMPLES } from './data'
+import { MAP_EXAMPLES, MOCK_SAMPLES } from './data'
 import { ensureRiskScore } from './risk'
 
 const SAMPLES_KEY = 'aquatrace_samples_v2'
@@ -150,6 +150,25 @@ export function getAllSamples(): Sample[] {
   if (isAccountSignedIn()) return user
   const mocks = MOCK_SAMPLES.map((s) => normalizeSample(s as Sample))
   return [...user, ...mocks]
+}
+
+function hasMapCoords(sample: Sample): boolean {
+  return (
+    Number.isFinite(sample.latitude) &&
+    Number.isFinite(sample.longitude) &&
+    !(sample.latitude === 0 && sample.longitude === 0)
+  )
+}
+
+/** Public pollution map: community examples + local tests with coordinates. */
+export function getMapSamples(): Sample[] {
+  const examples = MAP_EXAMPLES.map((s) => normalizeSample(s as Sample))
+  const userMapped = getUserSamples().filter(hasMapCoords)
+  const byId = new Map<string, Sample>()
+  for (const sample of [...examples, ...userMapped]) {
+    byId.set(sample.id, sample)
+  }
+  return Array.from(byId.values())
 }
 
 export function getSamplesForSource(sourceId: string): Sample[] {

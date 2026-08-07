@@ -88,7 +88,7 @@ export default function TestPage() {
       date: new Date().toISOString().slice(0, 10),
       analysis,
       possibleSource: detectPossibleSource(source.name, notes),
-      submittedToMap: false,
+      submittedToMap: true,
     }
 
     setActiveSourceId(source.id)
