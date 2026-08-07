@@ -30,7 +30,7 @@ export interface AiInsights {
 
 /**
  * In-memory cache: identical payloads on a warm serverless instance are
- * answered without hitting the OpenAI API (saves latency and tokens).
+ * answered without hitting the Gemini API (saves latency and tokens).
  */
 const cache = new Map<string, { data: AiInsights; expires: number }>()
 const CACHE_TTL_MS = 60 * 60 * 1000
@@ -76,7 +76,7 @@ function detectTrend(history: { score: number }[]): AiInsights['trend'] {
   return 'stable'
 }
 
-/** Rule-based analysis used when OPENAI_API_KEY is not configured or GPT fails. */
+/** Rule-based analysis used when GEMINI_API_KEY is not configured or Gemini fails. */
 function fallbackInsights(body: InsightsRequest): AiInsights {
   const { sample, history, lang } = body
   const trend = detectTrend(history)
@@ -131,47 +131,56 @@ function buildPrompt(body: InsightsRequest): { system: string; user: string } {
   return { system, user }
 }
 
-async function askGpt(body: InsightsRequest, apiKey: string): Promise<AiInsights> {
+async function askGemini(body: InsightsRequest, apiKey: string): Promise<AiInsights> {
   const { system, user } = buildPrompt(body)
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest'
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 20000)
 
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: user }] }],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 1000,
+            responseMimeType: 'application/json',
+          },
+        }),
+        signal: controller.signal,
       },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.4,
-        max_tokens: 500,
-      }),
-      signal: controller.signal,
-    })
+    )
 
     if (!res.ok) {
       const text = await res.text()
-      throw new Error(`OpenAI API ${res.status}: ${text.slice(0, 300)}`)
+      throw new Error(`Gemini API ${res.status}: ${text.slice(0, 300)}`)
     }
 
     const json = await res.json()
-    const content = json.choices?.[0]?.message?.content
-    if (!content) throw new Error('Empty GPT response')
+    const parts = json.candidates?.[0]?.content?.parts
+    const content = Array.isArray(parts)
+      ? parts.map((p: { text?: string }) => p?.text || '').join('').trim()
+      : ''
+    if (!content) throw new Error('Empty Gemini response')
 
     const parsed = JSON.parse(content)
     const trends = ['improving', 'stable', 'worsening', 'unknown']
+    const recommendations = Array.isArray(parsed.recommendations)
+      ? parsed.recommendations.slice(0, 4).map(String)
+      : typeof parsed.recommendations === 'string' && parsed.recommendations.trim()
+        ? [parsed.recommendations.trim()]
+        : []
     return {
       summary: String(parsed.summary || ''),
-      recommendations: Array.isArray(parsed.recommendations)
-        ? parsed.recommendations.slice(0, 4).map(String)
-        : [],
+      recommendations,
       trend: trends.includes(parsed.trend) ? parsed.trend : detectTrend(body.history),
       fallback: false,
     }
@@ -197,19 +206,19 @@ export async function POST(req: Request) {
   const cached = getCached(key)
   if (cached) return NextResponse.json(cached)
 
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     // No key configured: degrade gracefully to rule-based analysis.
     return NextResponse.json(fallbackInsights(body))
   }
 
   try {
-    const insights = await askGpt(body, apiKey)
-    if (!insights.summary) throw new Error('GPT returned no summary')
+    const insights = await askGemini(body, apiKey)
+    if (!insights.summary) throw new Error('Gemini returned no summary')
     setCached(key, insights)
     return NextResponse.json(insights)
   } catch (err) {
-    console.error('[api/insights] GPT call failed:', err)
+    console.error('[api/insights] Gemini call failed:', err)
     return NextResponse.json(fallbackInsights(body))
   }
 }

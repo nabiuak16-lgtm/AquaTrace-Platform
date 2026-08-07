@@ -14,7 +14,7 @@ interface Insights {
 const STRINGS = {
   en: {
     title: 'AI Analysis',
-    subtitle: 'GPT-powered interpretation of your result',
+    subtitle: 'AI interpretation of your result (Gemini)',
     loading: 'Analysing your result…',
     error: 'AI analysis is unavailable right now.',
     retry: 'Try again',
@@ -29,7 +29,7 @@ const STRINGS = {
   },
   ru: {
     title: 'AI-анализ',
-    subtitle: 'Интерпретация результата на основе GPT',
+    subtitle: 'AI-интерпретация результата (Gemini)',
     loading: 'Анализируем ваш результат…',
     error: 'AI-анализ сейчас недоступен.',
     retry: 'Повторить',
