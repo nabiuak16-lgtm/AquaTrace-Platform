@@ -7,6 +7,7 @@ import type { Sample } from '@/types'
 import RiskScoreCard from '@/components/RiskScoreCard'
 import ScoreHistoryChart from '@/components/ScoreHistoryChart'
 import DisclaimerBox from '@/components/DisclaimerBox'
+import AiInsights from '@/components/AiInsights'
 import { AlertTriangle, ArrowLeft, FlaskConical } from 'lucide-react'
 
 export default function ResultsPage() {
@@ -73,6 +74,10 @@ export default function ResultsPage() {
 
         <div className="mt-4">
           <RiskScoreCard analysis={sample.analysis} />
+        </div>
+
+        <div className="mt-4">
+          <AiInsights sample={sample} history={points} />
         </div>
 
         {warn && (

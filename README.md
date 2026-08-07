@@ -15,6 +15,7 @@ Live demo: [https://aquatrace-ten.vercel.app](https://aquatrace-ten.vercel.app)
 - Water source passports & test history
 - Before & After filter comparison
 - AI photo quality check
+- **GPT analysis** — AI interpretation of each result with personalised recommendations (EN / RU)
 - Membrane shop & pack activation
 - **AquaTrace Pro ($20/mo)** — multi-location dashboard, team access, PDF reports, alerts, analytics
 - Replacement Prefilters — **$5**
@@ -31,6 +32,17 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+## AI (GPT) integration
+
+The results page calls `POST /api/insights`, which sends the test data to OpenAI (`gpt-4o-mini` by default) and returns a summary, trend and recommendations. The API key stays on the server.
+
+1. Copy `.env.local.example` to `.env.local` and set `OPENAI_API_KEY`.
+2. On Vercel: Project Settings → Environment Variables → add `OPENAI_API_KEY`.
+
+Without a key the endpoint gracefully falls back to rule-based analysis, so the site keeps working.
+
+To keep GPT usage low, responses are cached: per sample in the browser (`localStorage`) and per payload on the server (in-memory, 1 h TTL).
 
 ## Stack
 
