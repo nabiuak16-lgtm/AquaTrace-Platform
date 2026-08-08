@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Droplets, FlaskConical, ShoppingBag, User } from 'lucide-react'
+import { Home, Droplets, FlaskConical, MapPin, User } from 'lucide-react'
 import clsx from 'clsx'
 import { useLang } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth'
@@ -15,12 +15,12 @@ export default function BottomNav() {
     { href: '/', label: t.navHome, icon: Home },
     { href: '/sources', label: t.navSources, icon: Droplets },
     { href: '/test', label: t.navTest, icon: FlaskConical },
-    { href: '/shop', label: t.navShop, icon: ShoppingBag },
+    { href: '/map', label: t.navMap, icon: MapPin },
     { href: user ? '/profile' : '/login', label: user ? t.navProfile : 'Sign in', icon: User },
   ]
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-t border-teal-100 safe-bottom">
+    <nav className="fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-t border-teal-100 safe-bottom md:hidden">
       <div className="max-w-lg mx-auto grid grid-cols-5 px-1 py-1.5">
         {ITEMS.map(({ href, label, icon: Icon }) => {
           const active =

@@ -31,7 +31,10 @@ export default function LeafletMap({ samples, onSelect, selectedId }: Props) {
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
       })
 
-      const map = L.map(mapRef.current).setView([51.16, 71.45], 11)
+      const map = L.map(mapRef.current, {
+        zoomControl: true,
+        attributionControl: true,
+      }).setView([51.16, 71.45], 11)
       mapInstanceRef.current = map
       layerRef.current = L.layerGroup().addTo(map)
 
@@ -40,11 +43,24 @@ export default function LeafletMap({ samples, onSelect, selectedId }: Props) {
         maxZoom: 18,
       }).addTo(map)
 
-      setReady(true)
+      // Mobile containers often measure 0 height on first paint — fix after layout.
+      requestAnimationFrame(() => {
+        map.invalidateSize()
+        setReady(true)
+      })
+      window.setTimeout(() => map.invalidateSize(), 200)
     })
+
+    const onResize = () => {
+      mapInstanceRef.current?.invalidateSize()
+    }
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
 
     return () => {
       cancelled = true
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('orientationchange', onResize)
       setReady(false)
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove()
@@ -65,6 +81,7 @@ export default function LeafletMap({ samples, onSelect, selectedId }: Props) {
     import('leaflet').then((L) => {
       if (cancelled || !mapInstanceRef.current || !layerRef.current) return
 
+      map.invalidateSize()
       layer.clearLayers()
       const markers: any[] = []
 
@@ -81,7 +98,7 @@ export default function LeafletMap({ samples, onSelect, selectedId }: Props) {
         })
 
         marker.bindPopup(`
-          <div style="font-family:system-ui;min-width:190px;">
+          <div style="font-family:system-ui;min-width:180px;max-width:240px;">
             <strong style="font-size:14px;">${sample.locationName}</strong>
             <br/>
             <span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:999px;background:${color}22;color:${color};font-size:12px;font-weight:600;border:1px solid ${color}44;">
@@ -106,6 +123,8 @@ export default function LeafletMap({ samples, onSelect, selectedId }: Props) {
       } else if (markers.length > 1) {
         map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2))
       }
+
+      window.setTimeout(() => map.invalidateSize(), 100)
     })
 
     return () => {
@@ -119,7 +138,7 @@ export default function LeafletMap({ samples, onSelect, selectedId }: Props) {
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
       />
-      <div ref={mapRef} className="w-full h-full rounded-2xl overflow-hidden" />
+      <div ref={mapRef} className="absolute inset-0 z-0 w-full h-full min-h-[280px]" />
     </>
   )
 }

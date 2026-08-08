@@ -7,7 +7,14 @@ import RiskBadge from '@/components/RiskBadge'
 import { MapPin, Droplets, FlaskConical, Calendar, Filter, Gauge } from 'lucide-react'
 import type { RiskLevel } from '@/types'
 
-const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false })
+const LeafletMap = dynamic(() => import('@/components/LeafletMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-teal-50/40 text-sm text-gray-500">
+      Loading map…
+    </div>
+  ),
+})
 
 export default function MapPage() {
   const [samples, setSamples] = useState<Sample[]>([])
@@ -28,33 +35,34 @@ export default function MapPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50/60 to-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-teal-600 text-sm font-semibold mb-1">
-              <MapPin className="w-4 h-4" />
-              POLLUTION MAP
-            </div>
-            <h1 className="text-3xl font-black text-gray-900">Contamination map</h1>
-            <p className="text-gray-500 mt-1 max-w-xl">
-              See screened locations around Astana and their AquaScore risk level. Example community
-              points are shown so you can explore the map right away; your own tests appear when you
-              run them.
-            </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-8 pb-8">
+        <div className="mb-3 md:mb-6">
+          <div className="flex items-center gap-2 text-teal-600 text-sm font-semibold mb-1">
+            <MapPin className="w-4 h-4" />
+            POLLUTION MAP
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            {([['Low', '#14b8a8'], ['Medium', '#f59e0b'], ['High', '#ef4444']] as const).map(
-              ([risk, color]) => (
-                <div key={risk} className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                  <span className="text-gray-600">{risk}</span>
-                </div>
-              ),
-            )}
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black text-gray-900">Contamination map</h1>
+              <p className="text-gray-500 mt-1 text-sm max-w-xl hidden sm:block">
+                See screened locations and their AquaScore risk level. Example points are included;
+                your own tests appear when you run them.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-xs sm:text-sm">
+              {([['Low', '#14b8a8'], ['Medium', '#f59e0b'], ['High', '#ef4444']] as const).map(
+                ([risk, color]) => (
+                  <div key={risk} className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                    <span className="text-gray-600">{risk}</span>
+                  </div>
+                ),
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 mb-3 md:mb-4 flex-wrap">
           <Filter className="w-4 h-4 text-gray-400" />
           {(['All', 'Low', 'Medium', 'High'] as const).map((f) => (
             <button
@@ -71,12 +79,10 @@ export default function MapPage() {
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative"
-              style={{ height: '520px' }}
-            >
+        {/* Map first on mobile so it is above the fold */}
+        <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="lg:col-span-2 order-1">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative h-[55vh] min-h-[280px] max-h-[520px] md:h-[520px] md:max-h-none">
               <LeafletMap
                 samples={filtered}
                 onSelect={setSelected}
@@ -90,7 +96,7 @@ export default function MapPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 order-2">
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <p className="text-sm font-semibold text-gray-700 mb-3">Overview</p>
               <div className="grid grid-cols-3 gap-2">
@@ -118,10 +124,7 @@ export default function MapPage() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    {
-                      icon: Gauge,
-                      label: `AquaScore ${selected.analysis.riskScore}`,
-                    },
+                    { icon: Gauge, label: `AquaScore ${selected.analysis.riskScore}` },
                     {
                       icon: Droplets,
                       label: `${selected.analysis.suspectedParticles} particles`,
