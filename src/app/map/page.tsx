@@ -35,7 +35,7 @@ export default function MapPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50/60 to-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-8 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="mb-3 md:mb-6">
           <div className="flex items-center gap-2 text-teal-600 text-sm font-semibold mb-1">
             <MapPin className="w-4 h-4" />

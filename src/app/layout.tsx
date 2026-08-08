@@ -17,10 +17,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-gray-50 text-gray-900 antialiased">
         <LanguageProvider>
           <AuthProvider>
-            <div className="md:block hidden">
-              <Navbar />
-            </div>
-            <main className="pt-0 md:pt-16 pb-24 md:pb-8 min-h-screen w-full">{children}</main>
+            <Navbar />
+            <main className="pt-16 pb-24 md:pb-8 min-h-screen w-full">{children}</main>
             <BottomNav />
           </AuthProvider>
         </LanguageProvider>

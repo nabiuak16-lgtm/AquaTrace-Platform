@@ -97,6 +97,13 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
+              href={user ? '/profile' : '/login'}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 rounded-lg text-sm font-medium text-gray-600"
+            >
+              {user ? 'Account' : 'Sign in'}
+            </Link>
+            <Link
               href="/test"
               onClick={() => setOpen(false)}
               className="block px-4 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-blue-600 text-white text-sm font-semibold text-center mt-2"
